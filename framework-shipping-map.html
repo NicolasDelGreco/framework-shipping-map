@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Framework — Shipping Availability</title>
+
+  <!-- IBM Plex (Carbon's typeface) -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- jsVectorMap -->
+  <link rel="stylesheet" href="https://unpkg.com/jsvectormap@1.5.3/dist/css/jsvectormap.min.css" />
+  <script src="https://unpkg.com/jsvectormap@1.5.3/dist/js/jsvectormap.min.js"></script>
+  <script src="https://unpkg.com/jsvectormap@1.5.3/dist/maps/world.js"></script>
+
+  <style>
+    :root {
+      --background:        #161616;
+      --background-hover:  #1f1f1f;
+      --layer-01:          #262626;
+      --layer-02:          #393939;
+      --layer-hover:       #333333;
+      --border-subtle:     #3d3d3d;
+      --border-strong:     #525252;
+      --text-primary:      #f4f4f4;
+      --text-secondary:    #c6c6c6;
+      --text-placeholder:  #6f6f6f;
+      --interactive:       #0f62fe;
+      --tag-orange-bg:     #5b2700;
+      --tag-orange-text:   #ff9d5c;
+      --support-success:   #42be65;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--background);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.42857;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Carbon Header ── */
+    .bx--header {
+      display: flex;
+      align-items: center;
+      height: 48px;
+      background: var(--layer-01);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .bx--header__name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bx--header__name .prefix { font-weight: 300; color: var(--text-secondary); }
+    .bx--header__nav {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      margin-left: 32px;
+    }
+    .bx--header__menu-item {
+      display: flex;
+      align-items: center;
+      height: 48px;
+      padding: 0 16px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      transition: color 0.1s, border-color 0.1s, background 0.1s;
+    }
+    .bx--header__menu-item:hover { background: var(--background-hover); color: var(--text-primary); }
+    .bx--header__menu-item.active { border-bottom-color: var(--interactive); color: var(--text-primary); }
+
+    /* ── Layout ── */
+    .bx--grid {
+      max-width: 1312px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      padding: 16px 0 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .page-header h1 {
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--text-primary);
+    }
+    .page-header p {
+      font-size: 11px;
+      color: var(--text-placeholder);
+      margin-top: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--support-success);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .status-chip::before {
+      content: '';
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--support-success);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.35; }
+    }
+
+    /* ── Map tile ── */
+    .map-tile {
+      background: var(--layer-01);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 4px;
+      animation: fadeUp 0.35s ease both;
+    }
+    .tile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .tile-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.32px;
+    }
+    .tile-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--text-placeholder);
+    }
+    #map { width: 100%; height: 340px; display: block; }
+
+    /* jsVectorMap tooltip override */
+    .jvm-tooltip {
+      background: var(--layer-02) !important;
+      border: 1px solid var(--border-strong) !important;
+      color: var(--text-primary) !important;
+      font-family: 'IBM Plex Sans', sans-serif !important;
+      font-size: 12px !important;
+      border-radius: 0 !important;
+      padding: 4px 8px !important;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.6) !important;
+    }
+
+    /* ── Regions grid ── */
+    .regions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      animation: fadeUp 0.45s 0.1s ease both;
+      opacity: 0;
+      animation-fill-mode: forwards;
+    }
+    .region-tile {
+      background: var(--layer-01);
+      border: 1px solid var(--border-subtle);
+    }
+    .region-tile-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--layer-02);
+    }
+    .region-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.32px;
+    }
+    .country-list { list-style: none; }
+    .country-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 13px;
+      color: var(--text-primary);
+      transition: background 0.1s;
+    }
+    .country-item:last-child { border-bottom: none; }
+    .country-item:hover { background: var(--layer-hover); }
+    .country-code {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--text-placeholder);
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Footer ── */
+    .bx--footer {
+      margin-top: 4px;
+      padding: 12px 0;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .bx--footer span {
+      font-size: 11px;
+      color: var(--text-placeholder);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .regions-grid { grid-template-columns: 1fr; }
+      .bx--header__nav { display: none; }
+    }
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .regions-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="bx--header">
+  <a href="https://frame.work" target="_blank" class="bx--header__name">
+    <img src="https://latestlogo.com/wp-content/uploads/2025/08/framework-computer-logo.svg" alt="Framework" style="height:20px;width:auto;filter:invert(1);" />
+    <span class="prefix" style="display:none;">Framework</span>&nbsp;
+  </a>
+  <nav class="bx--header__nav">
+    <a href="https://frame.work/products" target="_blank" class="bx--header__menu-item">Products</a>
+    <a href="https://frame.work/shipping" target="_blank" class="bx--header__menu-item active">Shipping</a>
+    <a href="https://frame.work/support" target="_blank" class="bx--header__menu-item">Support</a>
+    <a href="https://community.frame.work" target="_blank" class="bx--header__menu-item">Community</a>
+  </nav>
+</header>
+
+<main class="bx--grid">
+
+  <div class="page-header">
+    <div>
+      <h1>Países con Envío Disponible</h1>
+      <p>framework.computer / availability / shipping-regions</p>
+    </div>
+    <div class="status-chip">SHIPPING ACTIVE &nbsp;·&nbsp; 32 REGIONS</div>
+  </div>
+
+  <div class="map-tile">
+    <div class="tile-header">
+      <span class="tile-label">Cobertura Global</span>
+      <span class="tile-count">32 / ~195 países</span>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <div class="regions-grid">
+
+    <div class="region-tile">
+      <div class="region-tile-header">
+        <span style="color:#0f62fe;font-size:10px;">▣</span>
+        <span class="region-name">América &amp; Oceanía</span>
+      </div>
+      <ul class="country-list">
+        <li class="country-item">Australia <span class="country-code">AU</span></li>
+        <li class="country-item">Canadá <span class="country-code">CA</span></li>
+        <li class="country-item">Estados Unidos <span class="country-code">US</span></li>
+      </ul>
+    </div>
+
+    <div class="region-tile">
+      <div class="region-tile-header">
+        <span style="color:#0f62fe;font-size:10px;">▣</span>
+        <span class="region-name">Europa Occidental</span>
+      </div>
+      <ul class="country-list">
+        <li class="country-item">Alemania <span class="country-code">DE</span></li>
+        <li class="country-item">Austria <span class="country-code">AT</span></li>
+        <li class="country-item">Bélgica <span class="country-code">BE</span></li>
+        <li class="country-item">Dinamarca <span class="country-code">DK</span></li>
+        <li class="country-item">España <span class="country-code">ES</span></li>
+        <li class="country-item">Finlandia <span class="country-code">FI</span></li>
+        <li class="country-item">Francia <span class="country-code">FR</span></li>
+        <li class="country-item">Grecia <span class="country-code">GR</span></li>
+        <li class="country-item">Irlanda <span class="country-code">IE</span></li>
+        <li class="country-item">Italia <span class="country-code">IT</span></li>
+        <li class="country-item">Luxemburgo <span class="country-code">LU</span></li>
+        <li class="country-item">Países Bajos <span class="country-code">NL</span></li>
+        <li class="country-item">Portugal <span class="country-code">PT</span></li>
+        <li class="country-item">Reino Unido <span class="country-code">GB</span></li>
+        <li class="country-item">Suecia <span class="country-code">SE</span></li>
+      </ul>
+    </div>
+
+    <div class="region-tile">
+      <div class="region-tile-header">
+        <span style="color:#0f62fe;font-size:10px;">▣</span>
+        <span class="region-name">Europa Central/Este &amp; Asia</span>
+      </div>
+      <ul class="country-list">
+        <li class="country-item">Bulgaria <span class="country-code">BG</span></li>
+        <li class="country-item">Chipre <span class="country-code">CY</span></li>
+        <li class="country-item">Croacia <span class="country-code">HR</span></li>
+        <li class="country-item">Eslovaquia <span class="country-code">SK</span></li>
+        <li class="country-item">Eslovenia <span class="country-code">SI</span></li>
+        <li class="country-item">Estonia <span class="country-code">EE</span></li>
+        <li class="country-item">Hungría <span class="country-code">HU</span></li>
+        <li class="country-item">Letonia <span class="country-code">LV</span></li>
+        <li class="country-item">Lituania <span class="country-code">LT</span></li>
+        <li class="country-item">Malta <span class="country-code">MT</span></li>
+        <li class="country-item">Polonia <span class="country-code">PL</span></li>
+        <li class="country-item">Rep. Checa <span class="country-code">CZ</span></li>
+        <li class="country-item">Rumanía <span class="country-code">RO</span></li>
+        <li class="country-item">Taiwán <span class="country-code">TW</span></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="bx--footer">
+    <span>© 2025 <a href="https://frame.work" target="_blank" style="color:var(--text-placeholder);text-decoration:none;">Framework Computer Inc.</a></span>
+    <span>LAST UPDATED: 2025-Q1 &nbsp;·&nbsp; SOURCE: framework.computer/shipping</span>
+  </div>
+
+</main>
+
+<script>
+window.addEventListener("load", () => {
+  const activeCountries = [
+    "US","CA","AU",
+    "GB","DE","FR","IE","NL","AT",
+    "IT","ES","BE","TW","PL","DK",
+    "SE","FI","GR","EE","LV","LT",
+    "LU","MT","CY","SI","HR","PT",
+    "SK","HU","BG","RO","CZ"
+  ];
+
+  try {
+    new jsVectorMap({
+      selector: "#map",
+      map: "world",
+      zoomButtons: false,
+      backgroundColor: "#262626",
+      selectedRegions: activeCountries,
+      regionStyle: {
+        initial:  { fill: "#393939", stroke: "#161616", strokeWidth: 0.6 },
+        hover:    { fill: "#525252", cursor: "default" },
+        selected: { fill: "#ff6a00" },
+        selectedHover: { fill: "#ff8c00" }
+      },
+      onRegionTooltipShow(event, tooltip, code) {
+        const isActive = activeCountries.includes(code);
+        const label = tooltip.text();
+        tooltip.text(label + (isActive ? " — Envío disponible" : " — Sin envío"));
+      }
+    });
+  } catch(err) {
+    console.error("Map error:", err);
+  }
+});
+</script>
+</body>
+</html>
