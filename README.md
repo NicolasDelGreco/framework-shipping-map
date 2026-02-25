@@ -1,3 +1,5 @@
+<img width="704" height="340" alt="imagen" src="https://github.com/user-attachments/assets/0dbce871-7f2a-4893-9639-55651c7dc17b" />
+
 # Framework Shipping Availability Map
 
 Interactive map showing the countries where Framework Computer currently ships.
