@@ -8,7 +8,7 @@ Built with vanilla HTML/CSS/JS using jsVectorMap and a Carbon Design-inspired da
 
 ## Coverage
 
-32 regions across North America, Europe, and Asia-Pacific.
+32 regions in North America, Europe, and Asia-Pacific. Except for Argentina yet ¬¬.
 
 ## Usage
 
