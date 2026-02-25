@@ -12,7 +12,7 @@ Built with vanilla HTML/CSS/JS using jsVectorMap and a Carbon Design-inspired da
 
 ## Usage
 
-Just open `index.html` in any browser. No build step required.
+Just open `framework-shipping-map.html` in any browser. No build step required.
 
 ## Data source
 
